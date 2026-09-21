@@ -1,0 +1,8 @@
+{
+  "name": "@infolayer/bible-data",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "better-sqlite3": "^9.4.3"
+  }
+}
