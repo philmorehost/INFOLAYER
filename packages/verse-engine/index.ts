@@ -21,14 +21,14 @@ export class VerseEngine {
   }
 
   /**
-   * Compute string similarity score (0.0 to 1.0)
+   * Compute Jaccard word-set lexical similarity score (0.0 to 1.0)
    */
   public calculateSimilarity(str1: string, str2: string): number {
     const s1 = str1.toLowerCase().replace(/[^a-z0-9 ]/g, '');
     const s2 = str2.toLowerCase().replace(/[^a-z0-9 ]/g, '');
 
-    const words1 = new Set(s1.split(/\s+/));
-    const words2 = new Set(s2.split(/\s+/));
+    const words1 = new Set(s1.split(/\s+/).filter(w => w.length > 2));
+    const words2 = new Set(s2.split(/\s+/).filter(w => w.length > 2));
 
     const intersection = new Set([...words1].filter(w => words2.has(w)));
     const union = new Set([...words1, ...words2]);
@@ -37,7 +37,7 @@ export class VerseEngine {
   }
 
   /**
-   * Match live transcript against database of verses
+   * Match live transcript against database of verses using exact citation or lexical fuzzy matching
    */
   public matchTranscript(
     transcriptSnippet: string,
@@ -65,14 +65,14 @@ export class VerseEngine {
       }
     }
 
-    // 2. Fuzzy / Keyword Semantic Matcher
+    // 2. Lexical Fuzzy Matcher
     for (const v of verseList) {
       const score = this.calculateSimilarity(transcriptSnippet, v.text);
       if (score >= 0.25) {
         results.push({
           verse: v,
           confidenceScore: Math.min(score * 1.8, 0.95),
-          matchType: score >= 0.5 ? 'semantic' : 'fuzzy_keyword',
+          matchType: score >= 0.5 ? 'lexical_fuzzy' : 'fuzzy_keyword',
           rawMatchedPhrase: v.text
         });
       }

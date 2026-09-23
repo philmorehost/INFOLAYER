@@ -73,6 +73,6 @@ export interface PlaylistItem {
 export interface VerseMatchResult {
   verse: BibleVerse;
   confidenceScore: number; // 0.0 to 1.0
-  matchType: 'exact_citation' | 'fuzzy_keyword' | 'semantic';
+  matchType: 'exact_citation' | 'fuzzy_keyword' | 'lexical_fuzzy';
   rawMatchedPhrase: string;
 }
