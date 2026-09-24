@@ -1,6 +1,6 @@
-mod activation_client;
-
-use activation_client::{ActivationClient, LocalActivationCache, PlanFeature};
+use infolayer_core::broadcast::{NdiConfig, NdiOutput, VirtualCamOutput};
+use infolayer_core::whisper_engine::WhisperEngine;
+use infolayer_core::{ActivationClient, LocalActivationCache, PlanFeature};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::State;
@@ -103,7 +103,26 @@ fn get_activation_status() -> serde_json::Value {
 
 #[tauri::command]
 fn start_whisper_stt() -> String {
-    "Offline Whisper.cpp Engine Started".into()
+    let mut engine = WhisperEngine::new("tiny.en");
+    engine.start().unwrap_or_else(|e| e)
+}
+
+#[tauri::command]
+fn start_ndi_stream(stream_name: String) -> String {
+    let config = NdiConfig {
+        stream_name,
+        width: 1920,
+        height: 1080,
+        fps: 60,
+    };
+    let mut ndi = NdiOutput::new(config);
+    ndi.start().unwrap_or_else(|e| e)
+}
+
+#[tauri::command]
+fn start_virtual_camera(device_name: String) -> String {
+    let mut vcam = VirtualCamOutput::new(device_name);
+    vcam.start().unwrap_or_else(|e| e)
 }
 
 fn main() {
@@ -115,7 +134,9 @@ fn main() {
             get_displays,
             activate_key,
             get_activation_status,
-            start_whisper_stt
+            start_whisper_stt,
+            start_ndi_stream,
+            start_virtual_camera
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

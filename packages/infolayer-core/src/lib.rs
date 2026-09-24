@@ -1,3 +1,4 @@
+pub mod broadcast;
 pub mod whisper_engine;
 
 use serde::{Deserialize, Serialize};

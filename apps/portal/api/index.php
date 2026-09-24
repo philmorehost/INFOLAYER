@@ -1,7 +1,7 @@
 <?php
 /**
- * Activation API Endpoint
- * Handles: /api/activate, /api/validate, /api/deactivate
+ * Activation & Payment Webhook API Router
+ * Handles: /api/activate, /api/validate, /api/deactivate, /api/payment/webhook
  */
 
 header('Content-Type: application/json');
@@ -11,6 +11,12 @@ require_once __DIR__ . '/../core/plan_engine.php';
 
 $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+
+// Route payment webhooks
+if (strpos($uri, '/api/payment/webhook') !== false) {
+    require_once __DIR__ . '/../core/payment/webhook.php';
+    exit;
+}
 
 $db = PortalDB::getConnection();
 

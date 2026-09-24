@@ -8,6 +8,64 @@ define('INFOLAYER_PORTAL', true);
 require_once __DIR__ . '/../core/db.php';
 require_once __DIR__ . '/../core/plan_engine.php';
 
+session_start();
+
+// Admin Authentication Check
+if (empty($_SESSION['admin_logged_in'])) {
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['admin_login'])) {
+        $username = trim($_POST['username'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        $db = PortalDB::getConnection();
+        $stmt = $db->prepare("SELECT * FROM admins WHERE username = ?");
+        $stmt->execute([$username]);
+        $admin = $stmt->fetch();
+
+        if ($admin && password_verify($password, $admin['password_hash'])) {
+            $_SESSION['admin_logged_in'] = true;
+            $_SESSION['admin_name'] = $admin['name'];
+        } else {
+            $auth_error = "Invalid admin username or password.";
+        }
+    }
+
+    if (empty($_SESSION['admin_logged_in'])) {
+        ?>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>InfoLayer Admin Login</title>
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+                .login-card { background: #1e293b; padding: 2.5rem; border-radius: 12px; width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); border: 1px solid #334155; }
+                h2 { margin-top: 0; color: #38bdf8; font-size: 1.5rem; text-align: center; }
+                label { display: block; margin-top: 1rem; color: #cbd5e1; font-size: 0.875rem; }
+                input[type="text"], input[type="password"] { width: 100%; padding: 0.75rem; margin-top: 0.25rem; background: #0f172a; border: 1px solid #475569; border-radius: 6px; color: #fff; box-sizing: border-box; }
+                button { width: 100%; padding: 0.75rem; margin-top: 1.5rem; background: #0284c7; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+                button:hover { background: #0369a1; }
+                .error { background: #7f1d1d; color: #fca5a5; padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem; font-size: 0.875rem; }
+            </style>
+        </head>
+        <body>
+        <div class="login-card">
+            <h2>InfoLayer Portal Admin</h2>
+            <?php if (!empty($auth_error)): ?><div class="error"><?= htmlspecialchars($auth_error) ?></div><?php endif; ?>
+            <form method="POST">
+                <input type="hidden" name="admin_login" value="1">
+                <label>Admin Username</label>
+                <input type="text" name="username" required placeholder="admin">
+                <label>Password</label>
+                <input type="password" name="password" required>
+                <button type="submit">Log In to Portal</button>
+            </form>
+        </div>
+        </body>
+        </html>
+        <?php
+        exit;
+    }
+}
+
 $action = $_GET['action'] ?? 'dashboard';
 $error = '';
 $success = '';
