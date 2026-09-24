@@ -1,0 +1,8 @@
+{
+  "name": "@infolayer/verse-engine",
+  "version": "1.0.0",
+  "main": "index.ts",
+  "dependencies": {
+    "@infolayer/shared-types": "*"
+  }
+}

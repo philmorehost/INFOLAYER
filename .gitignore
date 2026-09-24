@@ -1,0 +1,9 @@
+node_modules/
+dist/
+build/
+*.sqlite
+apps/portal/storage/secure/*.sqlite
+apps/portal/storage/secure/.setup_complete
+apps/portal/config/app.config.php
+target/
+apps/desktop/src-tauri/target/

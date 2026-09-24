@@ -1,0 +1,13 @@
+{
+  "name": "@infolayer/ui",
+  "version": "1.0.0",
+  "main": "App.tsx",
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@infolayer/shared-types": "*"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0"
+  }
+}
