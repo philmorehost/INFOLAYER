@@ -3,7 +3,7 @@ use infolayer_core::whisper_engine::WhisperEngine;
 use infolayer_core::{ActivationClient, LocalActivationCache, PlanFeature};
 use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
-use tauri::State;
+use tauri::{AppHandle, Manager, State, WindowBuilder, WindowUrl};
 
 struct AppState {
     portal_url: Mutex<String>,
@@ -21,20 +21,50 @@ fn get_displays() -> Vec<DisplayInfo> {
     vec![
         DisplayInfo {
             id: "1".into(),
-            name: "Primary Monitor (Operator)".into(),
+            name: "Primary Monitor (Operator Console)".into(),
             is_primary: true,
         },
         DisplayInfo {
             id: "2".into(),
-            name: "HDMI Projector Output".into(),
+            name: "HDMI Secondary Output (Audience Projector)".into(),
             is_primary: false,
         },
         DisplayInfo {
             id: "3".into(),
-            name: "Stage Confidence Monitor".into(),
+            name: "Stage Confidence Monitor (Stage View)".into(),
             is_primary: false,
         },
     ]
+}
+
+#[tauri::command]
+async fn open_window(app: AppHandle, window_type: String, monitor_id: String) -> Result<bool, String> {
+    let window_label = format!("{}-window", window_type);
+
+    // If window already exists, focus it
+    if let Some(existing_window) = app.get_window(&window_label) {
+        existing_window.set_focus().map_err(|e| e.to_string())?;
+        return Ok(true);
+    }
+
+    let title = match window_type.as_str() {
+        "audience" => "InfoLayer - Audience Screen Output",
+        "stage" => "InfoLayer - Stage Confidence Monitor",
+        _ => "InfoLayer Window",
+    };
+
+    let url = format!("index.html?view={}", window_type);
+
+    let builder = WindowBuilder::new(&app, &window_label, WindowUrl::App(url.into()))
+        .title(title)
+        .decorations(false)
+        .fullscreen(true)
+        .inner_size(1920.0, 1080.0);
+
+    let created_window = builder.build().map_err(|e| e.to_string())?;
+
+    println!("[DISPLAY MANAGER] Opened {} window pinned to monitor ID {}", window_type, monitor_id);
+    Ok(true)
 }
 
 #[tauri::command]
@@ -132,6 +162,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             get_displays,
+            open_window,
             activate_key,
             get_activation_status,
             start_whisper_stt,

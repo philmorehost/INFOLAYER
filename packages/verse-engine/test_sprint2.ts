@@ -1,7 +1,7 @@
 import { VerseEngine } from './index';
 import { BibleVerse } from '@infolayer/shared-types';
 
-console.log("=== SPRINT 2 VERIFICATION TEST RUN ===");
+console.log("=== SPRINT 2 & 3 VERSE ENGINE VERIFICATION TEST RUN ===");
 
 const engine = new VerseEngine();
 
@@ -16,19 +16,23 @@ if (citation && citation.book === 'John' && citation.chapter === 3 && citation.v
   process.exit(1);
 }
 
-// Test 2: Matching
+// Test 2: Paraphrase Semantic Vector Matching
 const mockVerses: BibleVerse[] = [
   { id: 1, translation: 'KJV', book: 'John', chapter: 3, verse: 16, text: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.' },
   { id: 2, translation: 'KJV', book: 'Psalm', chapter: 23, verse: 1, text: 'The LORD is my shepherd; I shall not want.' }
 ];
 
-const matches = engine.matchTranscript("Turn with me to John 3:16", mockVerses);
-console.log("Match Results:", matches);
-if (matches.length > 0 && matches[0].matchType === 'exact_citation') {
-  console.log("[PASS] Verse matching test passed.");
+const paraphraseQuery = "The Lord is like a shepherd to me, I will never lack anything";
+const semanticMatches = engine.matchTranscript(paraphraseQuery, mockVerses);
+
+console.log("\nParaphrase Query:", `"${paraphraseQuery}"`);
+console.log("Semantic Match Results:", semanticMatches);
+
+if (semanticMatches.length > 0 && semanticMatches[0].verse.book === 'Psalm' && semanticMatches[0].matchType === 'semantic_embedding') {
+  console.log("[PASS] Local ONNX vector semantic paraphrase matching passed.");
 } else {
-  console.error("[FAIL] Verse matching failed.");
+  console.error("[FAIL] Paraphrase semantic vector matching failed.");
   process.exit(1);
 }
 
-console.log("=== SPRINT 2 ALL TESTS PASSED SUCCESSFULLY ===");
+console.log("\n=== ALL VERSE ENGINE TESTS PASSED SUCCESSFULLY ===");

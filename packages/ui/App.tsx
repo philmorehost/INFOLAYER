@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { ActivationStatus, BibleVerse, ThemeConfig, VerseMatchResult } from '@infolayer/shared-types';
+import { ActivationStatus, BibleVerse, PlaylistItem, ThemeConfig, VerseMatchResult } from '@infolayer/shared-types';
 import { browserMockNativeAPI, NativeAPI } from './native-api.browser-mock';
 
 export const AppUI: React.FC<{ api?: NativeAPI }> = ({ api = browserMockNativeAPI }) => {
-  const [activeTab, setActiveTab] = useState<'console' | 'theme' | 'bible' | 'activation'>('console');
+  const [activeTab, setActiveTab] = useState<'console' | 'playlist' | 'theme' | 'bible' | 'activation'>('console');
   const [status, setStatus] = useState<ActivationStatus | null>(null);
   const [transcript, setTranscript] = useState<string[]>([]);
 
@@ -15,6 +15,14 @@ export const AppUI: React.FC<{ api?: NativeAPI }> = ({ api = browserMockNativeAP
   // Broadcast Channels State
   const [broadcastNdi, setBroadcastNdi] = useState<boolean>(true);
   const [broadcastVcam, setBroadcastVcam] = useState<boolean>(false);
+
+  // Playlist / Order of Service Builder State
+  const [playlist, setPlaylist] = useState<PlaylistItem[]>([
+    { id: 'p1', type: 'song', title: 'Opening Hymn: Amazing Grace', content: 'Amazing grace! How sweet the sound, That saved a wretch like me!' },
+    { id: 'p2', type: 'verse', title: 'Scripture Reading: Psalm 23:1', content: 'The LORD is my shepherd; I shall not want.' },
+    { id: 'p3', type: 'song', title: 'Worship: How Great Thou Art', content: 'Then sings my soul, My Saviour God, to Thee, How great Thou art!' }
+  ]);
+  const [activePlaylistIndex, setActivePlaylistIndex] = useState<number>(0);
 
   // Activation Modal State
   const [inputKey, setInputKey] = useState('');
@@ -51,12 +59,31 @@ export const AppUI: React.FC<{ api?: NativeAPI }> = ({ api = browserMockNativeAP
         if (presentationMode === 'auto') {
           setLiveOutputVerse(`${detectedMatch.verse.book} ${detectedMatch.verse.chapter}:${detectedMatch.verse.verse} - ${detectedMatch.verse.text}`);
         } else {
-          // Stage in Suggest Mode Cards
           setSuggestedCards(prev => [detectedMatch, ...prev.filter(c => c.verse.id !== detectedMatch.verse.id)]);
         }
       }
     });
-  }, [api, presentationMode]);
+
+    // Keyboard Arrow Navigation for Order of Service
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        setActivePlaylistIndex(prev => {
+          const next = Math.min(prev + 1, playlist.length - 1);
+          setLiveOutputVerse(`${playlist[next].title} - ${playlist[next].content}`);
+          return next;
+        });
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        setActivePlaylistIndex(prev => {
+          const next = Math.max(prev - 1, 0);
+          setLiveOutputVerse(`${playlist[next].title} - ${playlist[next].content}`);
+          return next;
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [api, presentationMode, playlist]);
 
   const handleSendLive = (card: VerseMatchResult) => {
     setLiveOutputVerse(`${card.verse.book} ${card.verse.chapter}:${card.verse.verse} - ${card.verse.text}`);
@@ -88,13 +115,13 @@ export const AppUI: React.FC<{ api?: NativeAPI }> = ({ api = browserMockNativeAP
         {/* Navigation Tabs */}
         <nav style={{ display: 'flex', gap: '1rem' }}>
           <button onClick={() => setActiveTab('console')} style={{ background: activeTab === 'console' ? '#0284c7' : 'transparent', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer' }}>Operator Console</button>
+          <button onClick={() => setActiveTab('playlist')} style={{ background: activeTab === 'playlist' ? '#0284c7' : 'transparent', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer' }}>Order of Service</button>
           <button onClick={() => setActiveTab('theme')} style={{ background: activeTab === 'theme' ? '#0284c7' : 'transparent', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer' }}>Theme Designer</button>
           <button onClick={() => setActiveTab('activation')} style={{ background: activeTab === 'activation' ? '#0284c7' : 'transparent', color: '#fff', border: 'none', padding: '0.5rem 1rem', borderRadius: '6px', cursor: 'pointer' }}>Activation & Key</button>
         </nav>
 
         {/* Mode Toggle & Status */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          {/* Mode Toggle */}
           <div style={{ background: '#0f172a', padding: '0.25rem', borderRadius: '6px', border: '1px solid #334155', display: 'flex', gap: '0.25rem' }}>
             <button onClick={() => setSuggestMode('suggest')} style={{ background: presentationMode === 'suggest' ? '#f59e0b' : 'transparent', color: presentationMode === 'suggest' ? '#000' : '#94a3b8', border: 'none', padding: '0.25rem 0.75rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer' }}>
               Suggest Mode
@@ -116,7 +143,6 @@ export const AppUI: React.FC<{ api?: NativeAPI }> = ({ api = browserMockNativeAP
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
             {/* Live Transcript & Suggestion Cards Pane */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              {/* Suggestion Cards Pane (Suggest Mode Human-in-the-Loop) */}
               <div style={{ background: '#1e293b', border: '1px solid #f59e0b', borderRadius: '8px', padding: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                   <h3 style={{ margin: 0, fontSize: '1rem', color: '#f59e0b' }}>AI Staged Suggestion Cards ({suggestedCards.length})</h3>
@@ -162,7 +188,6 @@ export const AppUI: React.FC<{ api?: NativeAPI }> = ({ api = browserMockNativeAP
               <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <h2 style={{ margin: 0, fontSize: '1.1rem', color: '#38bdf8' }}>Audience Screen Output</h2>
-                  {/* Broadcast Channel Status Pills */}
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', background: broadcastNdi ? '#10b981' : '#334155', color: '#000', borderRadius: '4px', fontWeight: 'bold' }}>NDI: Active</span>
                     <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.5rem', background: broadcastVcam ? '#10b981' : '#334155', color: broadcastVcam ? '#000' : '#94a3b8', borderRadius: '4px', fontWeight: 'bold' }}>Virtual Cam</span>
@@ -199,6 +224,39 @@ export const AppUI: React.FC<{ api?: NativeAPI }> = ({ api = browserMockNativeAP
                 </label>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'playlist' && (
+          <div style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', color: '#38bdf8' }}>Order of Service / Playlist Builder</h2>
+              <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Use Keyboard Arrow Keys (↑ / ↓) to navigate live slides</span>
+            </div>
+
+            {playlist.map((item, index) => (
+              <div key={item.id} onClick={() => {
+                setActivePlaylistIndex(index);
+                setLiveOutputVerse(`${item.title} - ${item.content}`);
+              }} style={{
+                background: activePlaylistIndex === index ? '#0284c7' : '#0f172a',
+                color: '#fff',
+                padding: '1rem',
+                borderRadius: '6px',
+                marginBottom: '0.75rem',
+                cursor: 'pointer',
+                border: '1px solid #334155',
+                display: 'flex',
+                justify: 'space-between',
+                alignItems: 'center'
+              }}>
+                <div>
+                  <strong style={{ fontSize: '1rem' }}>{item.title}</strong>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.85rem', opacity: 0.8 }}>{item.content}</p>
+                </div>
+                {activePlaylistIndex === index && <span style={{ background: '#10b981', color: '#000', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold' }}>LIVE ON SCREEN</span>}
+              </div>
+            ))}
           </div>
         )}
 

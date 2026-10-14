@@ -1,4 +1,4 @@
--- SQLite Schema for Offline Bible Data with FTS5 Full-Text Search
+-- SQLite Schema for Offline Bible & Song Data
 
 CREATE TABLE IF NOT EXISTS translations (
     id TEXT PRIMARY KEY,
@@ -22,6 +22,14 @@ CREATE VIRTUAL TABLE IF NOT EXISTS verses_fts USING fts5(
     chapter UNINDEXED,
     verse UNINDEXED,
     text
+);
+
+CREATE TABLE IF NOT EXISTS songs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    author TEXT,
+    ccli_number TEXT,
+    lyrics_json TEXT NOT NULL
 );
 
 INSERT OR IGNORE INTO translations (id, name) VALUES ('KJV', 'King James Version');
